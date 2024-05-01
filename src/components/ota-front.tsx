@@ -24,7 +24,7 @@ import { DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator, Dropdown
 import { CardTitle, CardHeader, CardContent, Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 
-export function ota-front() {
+export function otafront(){
   return (
     <>
       <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr]">
@@ -294,7 +294,7 @@ export function ota-front() {
   )
 }
 
-function BellIcon(props) {
+function BellIcon(props: any) {
   return (
     <svg
       {...props}
@@ -315,7 +315,7 @@ function BellIcon(props) {
 }
 
 
-function ClockIcon(props) {
+function ClockIcon(props: any) {
   return (
     <svg
       {...props}
@@ -336,7 +336,7 @@ function ClockIcon(props) {
 }
 
 
-function LaptopIcon(props) {
+function LaptopIcon(props: any) {
   return (
     <svg
       {...props}
@@ -356,7 +356,7 @@ function LaptopIcon(props) {
 }
 
 
-function Package2Icon(props) {
+function Package2Icon(props: any) {
   return (
     <svg
       {...props}
@@ -378,7 +378,7 @@ function Package2Icon(props) {
 }
 
 
-function PackageIcon(props) {
+function PackageIcon(props: any) {
   return (
     <svg
       {...props}
@@ -401,7 +401,7 @@ function PackageIcon(props) {
 }
 
 
-function RefreshCwIcon(props) {
+function RefreshCwIcon(props: any) {
   return (
     <svg
       {...props}
@@ -424,7 +424,7 @@ function RefreshCwIcon(props) {
 }
 
 
-function SearchIcon(props) {
+function SearchIcon(props: any) {
   return (
     <svg
       {...props}
@@ -445,7 +445,7 @@ function SearchIcon(props) {
 }
 
 
-function ThermometerIcon(props) {
+function ThermometerIcon(props: any) {
   return (
     <svg
       {...props}
