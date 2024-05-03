@@ -108,8 +108,8 @@ export default function Otapage1(){
                   console.log('Sensor Data:', data);
       
                   // Update state variables with the fetched data
-                  setTemperature(data.temperature);
-                  setHumidity(data.humidity);
+                  setTemperature(data.temperature.toFixed(2));
+                  setHumidity(data.humidity.toFixed(2));
                   setVersion(data.firmwareVersion);
               } else {
                   setIsGreen(false);
