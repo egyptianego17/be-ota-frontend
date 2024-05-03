@@ -131,14 +131,14 @@ export default function Otapage1(){
               // Fetch the latest 10 serial messages from the server
               const response = await fetch(`${baseUrl}/latest-serial-messages`); // Adjust the URL as needed
               if (!response.ok) {
-                  throw new Error('Failed to fetch serial messages');
+                throw new Error('Failed to fetch serial messages');
               }
               const data = await response.json();
 
               // Combine the messages from the data array into a single string
               const messages = data
-                  .map((msg) => `> ${msg.message}`) // Add '>' prefix and separate lines
-                  .join('\n'); // Join the messages with a newline character
+                .map((msg: { message: string }) => `> ${msg.message}`) // Add '>' prefix and separate lines
+                .join('\n'); // Join the messages with a newline character
 
               // Update the state with the combined string
               setSerialMessages(messages);
