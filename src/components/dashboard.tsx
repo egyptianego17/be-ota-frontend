@@ -229,7 +229,7 @@ export default function Otapage1(){
                     alt="Avatar"
                     className="rounded-full"
                     height="32"
-                    src="/placeholder.svg"
+                    src="https://freesvg.org/img/icon_user_whiteongrey.png"
                     style={{
                       aspectRatio: "32/32",
                       objectFit: "cover",
