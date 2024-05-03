@@ -17,16 +17,156 @@ To read more about using these font, please visit the Next.js documentation:
 - App Directory: https://nextjs.org/docs/app/building-your-application/optimizing/fonts
 - Pages Directory: https://nextjs.org/docs/pages/building-your-application/optimizing/fonts
 **/
+"use client";
+
 import Link from "next/link"
+import config from './config'; 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem, DropdownMenuContent, DropdownMenu } from "@/components/ui/dropdown-menu"
 import { CardTitle, CardHeader, CardContent, Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import React, { useState, useEffect } from "react";
 
-export function otafront(){
+export default function Otapage1(){
+
+        // Use separate state variables for temperature and humidity
+        const [temperature, setTemperature] = useState("NULL");
+        const [humidity, setHumidity] = useState("NULL");
+        const [version, setVersion] = useState("NULL");
+        const [status, setStatus] = useState("NULL");
+        const [formattedLastSeen, setLastSeen] = useState("NULL");
+        const [isGreen, setIsGreen] = useState(false);
+        const baseUrl = process.env.NODE_ENV === 'production' ? config.production.baseUrl : config.development.baseUrl;
+        // Function to fetch sensor data from the API
+        const getSensorsData = async () => {
+          try {
+              // Fetch device status from the /get-device-status endpoint
+              const statusResponse = await fetch(`${baseUrl}/check-device-status`);
+      
+              // Check if the status response is okay
+              if (!statusResponse.ok) {
+                  throw new Error('Network response was not ok');
+              }
+      
+              // Parse the status data
+              const statusData = await statusResponse.json();
+              console.log('Device Status:', statusData);
+
+              // Convert the last seen timestamp to a Date object
+              const lastSeenDate = new Date(statusData.lastSeen);
+
+              // Convert the date to a UNIX timestamp in milliseconds
+              const lastSeenTimestamp = lastSeenDate.getTime();
+              console.log('Last Seen:', statusData.lastSeen);
+              console.log('Timestamp:', lastSeenTimestamp);
+
+              // Calculate the current time in milliseconds
+              const currentTimestamp = Date.now() - 10800000; 
+
+              // Calculate the difference in time in seconds
+              const timeDifferenceInSeconds = (currentTimestamp - lastSeenTimestamp) / 1000;
+
+              let formattedLastSeen;
+              // Format the time difference based on the magnitude
+              if (timeDifferenceInSeconds < 60) {
+                  // If the difference is less than 60 seconds
+                  formattedLastSeen = `${Math.round(timeDifferenceInSeconds)} seconds ago`;
+              } else if (timeDifferenceInSeconds < 3600) {
+                  // If the difference is less than 60 minutes (3600 seconds)
+                  const minutes = Math.floor(timeDifferenceInSeconds / 60);
+                  formattedLastSeen = `${minutes} minutes ago`;
+              } else if (timeDifferenceInSeconds < 86400) {
+                  // If the difference is less than 24 hours (86400 seconds)
+                  const hours = Math.floor(timeDifferenceInSeconds / 3600);
+                  formattedLastSeen = `${hours} hours ago`;
+              } else {
+                  // If the difference is 24 hours or more
+                  const days = Math.floor(timeDifferenceInSeconds / 86400);
+                  formattedLastSeen = `${days} days ago`;
+              }
+              // Log the formatted last seen time
+              console.log('Last Seen:', formattedLastSeen);
+
+              // Update the state with the formatted last seen time
+              setLastSeen(formattedLastSeen);
+              setStatus(statusData.status);
+              
+              // Check if the device status is "Online"
+              if (statusData.status === 'Online') {
+                  setIsGreen(true);
+                  // Fetch sensor data from the /get-sensor-data endpoint
+                  const response = await fetch(`${baseUrl}/get-sensor-data`);
+      
+                  // Check if the response is okay
+                  if (!response.ok) {
+                      throw new Error('Network response was not ok');
+                  }
+      
+                  // Parse the sensor data
+                  const data = await response.json();
+                  console.log('Sensor Data:', data);
+      
+                  // Update state variables with the fetched data
+                  setTemperature(data.temperature);
+                  setHumidity(data.humidity);
+                  setVersion(data.firmwareVersion);
+              } else {
+                  setIsGreen(false);
+                  // If the device is offline, set the state variables to default values (e.g., null or 0)
+                  setTemperature('0.0');
+                  setHumidity('0.0');
+                  setVersion('1.0.0');
+              }
+          } catch (error) {
+              console.error('Error fetching data:', error);
+          }
+      };
+
+        const [serialMessages, setSerialMessages] = useState([]);
+
+        // Function to fetch the latest 10 serial messages from the server
+        const fetchSerialMessages = async () => {
+          try {
+              // Fetch the latest 10 serial messages from the server
+              const response = await fetch(`${baseUrl}/latest-serial-messages`); // Adjust the URL as needed
+              if (!response.ok) {
+                  throw new Error('Failed to fetch serial messages');
+              }
+              const data = await response.json();
+
+              // Combine the messages from the data array into a single string
+              const messages = data
+                  .map((msg) => `> ${msg.message}`) // Add '>' prefix and separate lines
+                  .join('\n'); // Join the messages with a newline character
+
+              // Update the state with the combined string
+              setSerialMessages(messages);
+          } catch (error) {
+              console.error('Error fetching serial messages:', error);
+          }
+      };
+    
+          // Run the fetch functions when the component mounts
+          useEffect(() => {
+            // Call the functions once when the component mounts
+            getSensorsData();
+            fetchSerialMessages();
+
+            // Set up intervals to call the functions every 5 seconds
+            const sensorsDataInterval = setInterval(getSensorsData, 5000);
+            const serialMessagesInterval = setInterval(fetchSerialMessages, 5000);
+
+            // Cleanup the intervals when the component unmounts
+            return () => {
+                clearInterval(sensorsDataInterval);
+                clearInterval(serialMessagesInterval);
+            };
+        }, []);
+
   return (
     <>
+    {/* PAGE 1*/}
       <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr]">
         <div className="hidden border-r bg-gray-100/40 lg:block dark:bg-gray-800/40">
           <div className="flex h-full max-h-screen flex-col gap-2">
@@ -117,12 +257,12 @@ export function otafront(){
                 </CardHeader>
                 <CardContent className="grid gap-4">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-2 w-2 shrink-0 rounded-full bg-green-500" />
-                    <span>Connected</span>
+                  <ColoredCircle isGreen={isGreen} />
+                    <span>{status}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <ClockIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                    <span>Last seen 2 hours ago</span>
+                    <span>Last seen: {formattedLastSeen}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -133,11 +273,11 @@ export function otafront(){
                 <CardContent className="grid gap-4">
                   <div className="flex items-center gap-2">
                     <ThermometerIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                    <span>Humidity: 65%</span>
+                    <span>Humidity: {humidity}%</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <ThermometerIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                    <span>Temperature: 22°C</span>
+                    <span>Temperature: {temperature}°C</span>
                   </div>
                 </CardContent>
               </Card>
@@ -148,7 +288,7 @@ export function otafront(){
                 <CardContent className="grid gap-4">
                   <div className="flex items-center gap-2">
                     <LaptopIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                    <span>Version: 2.1.4</span>
+                    <span>Version: {version}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -164,135 +304,26 @@ export function otafront(){
                 </Button>
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Serial Monitoring</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                <div className="bg-gray-100 rounded-lg p-4 dark:bg-gray-800">
-                  <pre className="font-mono text-sm text-gray-500 dark:text-gray-400">
-                    {`
-                                  > Connecting to device...
-                                  > Device connected
-                                  > Firmware version: 2.1.4
-                                  > Humidity: 65%
-                                  > Temperature: 22°C
-                                  > No errors detected
-                                `}
-                  </pre>
-                </div>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Serial Monitoring</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                  <div className="bg-gray-100 rounded-lg p-4 dark:bg-gray-800" style={{ height: '150px', overflowY: 'auto' }}>
+                    <pre className="font-mono text-sm text-gray-500 dark:text-gray-400">
+                      {serialMessages}
+                    </pre>
+                  </div>
+                </CardContent>
+              </Card>
           </main>
         </div>
       </div>
-      <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr]">
-        <div className="hidden border-r bg-gray-100/40 lg:block dark:bg-gray-800/40">
-          <div className="flex h-full max-h-screen flex-col gap-2">
-            <div className="flex h-[60px] items-center border-b px-6">
-              <Link className="flex items-center gap-2 font-semibold" href="#">
-                <Package2Icon className="h-6 w-6" />
-                <span className="">IoT Platform</span>
-              </Link>
-              <Button className="ml-auto h-8 w-8" size="icon" variant="outline">
-                <BellIcon className="h-4 w-4" />
-                <span className="sr-only">Toggle notifications</span>
-              </Button>
-            </div>
-            <div className="flex-1 overflow-auto py-2">
-              <nav className="grid items-start px-4 text-sm font-medium">
-                <Link
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-all hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50"
-                  href="#"
-                >
-                  <PackageIcon className="h-4 w-4" />
-                  Device Management
-                </Link>
-                <Link
-                  className="flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2 text-gray-900  transition-all hover:text-gray-900 dark:bg-gray-800 dark:text-gray-50 dark:hover:text-gray-50"
-                  href="#"
-                >
-                  <LaptopIcon className="h-4 w-4" />
-                  Firmware Update
-                </Link>
-              </nav>
-            </div>
-          </div>
-        </div>
-        <div className="flex flex-col">
-          <header className="flex h-14 lg:h-[60px] items-center gap-4 border-b bg-gray-100/40 px-6 dark:bg-gray-800/40">
-            <Link className="lg:hidden" href="#">
-              <Package2Icon className="h-6 w-6" />
-              <span className="sr-only">Home</span>
-            </Link>
-            <div className="w-full flex-1">
-              <form>
-                <div className="relative">
-                  <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                  <Input
-                    className="w-full bg-white shadow-none appearance-none pl-8 md:w-2/3 lg:w-1/3 dark:bg-gray-950"
-                    placeholder="Search devices..."
-                    type="search"
-                  />
-                </div>
-              </form>
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  className="rounded-full border border-gray-200 w-8 h-8 dark:border-gray-800 dark:border-gray-800"
-                  size="icon"
-                  variant="ghost"
-                >
-                  <img
-                    alt="Avatar"
-                    className="rounded-full"
-                    height="32"
-                    src="/placeholder.svg"
-                    style={{
-                      aspectRatio: "32/32",
-                      objectFit: "cover",
-                    }}
-                    width="32"
-                  />
-                  <span className="sr-only">Toggle user menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuItem>Support</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Logout</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </header>
-          <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Firmware Update</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="firmware-version">Firmware Version</Label>
-                    <Input id="firmware-version" placeholder="3.2.1" />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="firmware-file">Firmware File</Label>
-                    <Input id="firmware-file" type="file" />
-                  </div>
-                </div>
-                <Button>Update Firmware</Button>
-              </CardContent>
-            </Card>
-          </main>
-        </div>
-      </div>
+      {/* page 2*/}
     </>
   )
 }
+
 
 function BellIcon(props: any) {
   return (
@@ -376,6 +407,13 @@ function Package2Icon(props: any) {
     </svg>
   )
 }
+
+const ColoredCircle = ({ isGreen }: { isGreen: boolean }) => {
+  return (
+      <div className={`flex h-2 w-2 shrink-0 rounded-full ${isGreen ? 'bg-green-500' : 'bg-red-500'}`}>
+      </div>
+  );
+};
 
 
 function PackageIcon(props: any) {
