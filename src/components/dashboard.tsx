@@ -29,7 +29,12 @@ export default function Dashboard() {
   const [sensorData, setSensorData] = useState({ temperature: "NULL", humidity: "NULL", firmwareVersion: "NULL" });
   const [serialMessages, setSerialMessages] = useState("");
   const [isGreen, setIsGreen] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
   const { t } = useTranslation("common");
+
+  const updateOnlineStatus = () => {
+    setIsOnline(navigator.onLine);
+  };
 
   // Fetch data functions
   const fetchDeviceStatus = async () => {
@@ -77,13 +82,20 @@ export default function Dashboard() {
 
   // Fetch data on mount and set intervals
   useEffect(() => {
+    updateOnlineStatus();
     fetchDeviceStatus();
     fetchSerialMessages();
     const statusInterval = setInterval(fetchDeviceStatus, 5000);
     const serialMessagesInterval = setInterval(fetchSerialMessages, 5000);
+
+    window.addEventListener("online", updateOnlineStatus);
+    window.addEventListener("offline", updateOnlineStatus);
+    
     return () => {
       clearInterval(statusInterval);
       clearInterval(serialMessagesInterval);
+      window.removeEventListener("online", updateOnlineStatus);
+      window.removeEventListener("offline", updateOnlineStatus);
     };
   }, []);
 
@@ -91,6 +103,13 @@ export default function Dashboard() {
     <div className="grid min-h-screen w-full">
       <div className="flex flex-col">
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
+          {/* Display message when offline */}
+          {!isOnline && (
+            <div className="bg-red-200 text-red-800 p-4 rounded-md mb-4">
+              {t("Please connect to the internet")}
+            </div>
+          )}
+
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {/* Device Status Card */}
             <Card>
