@@ -110,6 +110,21 @@ export default function Dashboard() {
       {loading ? (
         <div className="flex items-center justify-center min-h-screen">
           <Spinner loading={loading} color="#ffffff" size={100} />
+          </div>
+        ) : isOnline ? (
+          <div className="flex flex-col items-center justify-center min-h-screen dark:bg-gray-900 pb-40 rounded-lg shadow-md"> 
+            <h1 className="text-xl font-bold text-red-700 mb-2">{t("No Internet Connection")}</h1>
+            <p className="text-white mb-4 text-center"> {/* Fixed the color class here */}
+              {t("Please check your network connection and try again.")}
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => window.location.reload()}
+              style={{ backgroundColor: 'white', color: 'black', border: '1px solid gray' }}
+              className="mt-4 hover:bg-gray-200"
+            >
+              {t("Retry")}
+          </Button>
         </div>
       ) : (
         <div className="flex flex-col">
