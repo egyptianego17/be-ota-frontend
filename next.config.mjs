@@ -4,6 +4,13 @@ const { i18n } = pkg;
 
 /** @type {import("next").NextConfig} */
 const nextConfig = {
+webpack(config) {
+    config.module.rules.push({
+        test: /\.svg$/,
+        use: ["@svgr/webpack"],
+    });
+    return config;
+    },
   reactStrictMode: true,
   i18n,
 };
@@ -15,7 +22,7 @@ export default withPWA({
   runtimeCaching: [
     {
       // Cache API calls
-      urlPattern: /^https:\/\/api\.example\.com\//, // Replace with your API's domain
+      urlPattern: /^https:\/\/api\.example\.com\//,
       handler: "NetworkFirst", // First tries network, then falls back to cache if offline
       options: {
         cacheName: "api-cache",

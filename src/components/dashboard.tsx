@@ -23,20 +23,22 @@ import LaptopIcon from "@/components/icons/LaptopIcon";
 import RefreshCwIcon from "@/components/icons/RefreshCwIcon";
 import ColoredCircle from "@/components/icons/ColoredCircle";
 import { getDeviceStatus, getSensorData, getSerialMessages } from "@/services/apis";
+import Spinner from "@/components/ui/Spinner"; 
+import Navbar from "@/components/navbar";
 
 export default function Dashboard() {
-  const [status, setStatus] = useState({ status: "NULL", lastSeen: "NULL" });
-  const [sensorData, setSensorData] = useState({ temperature: "NULL", humidity: "NULL", firmwareVersion: "NULL" });
+  const [status, setStatus] = useState({ status: "Offline", lastSeen: "A long time ago." });
+  const [sensorData, setSensorData] = useState({ temperature: "0.0", humidity: "0.0", firmwareVersion: "1.0" });
   const [serialMessages, setSerialMessages] = useState("");
   const [isGreen, setIsGreen] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
+  const [loading, setLoading] = useState(true);
   const { t } = useTranslation("common");
 
   const updateOnlineStatus = () => {
     setIsOnline(navigator.onLine);
   };
 
-  // Fetch data functions
   const fetchDeviceStatus = async () => {
     try {
       const data = await getDeviceStatus();
@@ -70,7 +72,6 @@ export default function Dashboard() {
     }
   };
 
-  // Format "last seen" time difference
   const formatTimeAgo = (timestamp: string) => {
     const lastSeenDate = new Date(timestamp);
     const timeDiff = (Date.now() - lastSeenDate.getTime()) / 1000;
@@ -80,11 +81,15 @@ export default function Dashboard() {
     return `${Math.floor(timeDiff / 86400)} days ago`;
   };
 
-  // Fetch data on mount and set intervals
   useEffect(() => {
     updateOnlineStatus();
-    fetchDeviceStatus();
-    fetchSerialMessages();
+    const fetchData = async () => {
+      await fetchDeviceStatus();
+      await fetchSerialMessages();
+      setLoading(false); // Disable loading once data is fetched
+    };
+
+    fetchData();
     const statusInterval = setInterval(fetchDeviceStatus, 5000);
     const serialMessagesInterval = setInterval(fetchSerialMessages, 5000);
 
@@ -101,82 +106,82 @@ export default function Dashboard() {
 
   return (
     <div className="grid min-h-screen w-full">
-      <div className="flex flex-col">
-        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
-          {/* Display message when offline */}
-          {!isOnline && (
-            <div className="bg-red-200 text-red-800 p-4 rounded-md mb-4">
-              {t("Please connect to the internet")}
+      <Navbar /> {/* Add the Navbar here */}
+      {loading ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <Spinner loading={loading} color="#ffffff" size={100} />
+        </div>
+      ) : (
+        <div className="flex flex-col">
+          <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {/* Device Status Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("Device Status")}</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                  <div className="flex items-center gap-2">
+                    <ColoredCircle isGreen={isGreen} />
+                    <span>{status.status}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ClockIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    <span>{t("Last seen")}: {status.lastSeen}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* System Monitoring Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("System Monitoring")}</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                  <div className="flex items-center gap-2">
+                    <ThermometerIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    <span>{t("Humidity")}: {sensorData.humidity}%</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ThermometerIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    <span>{t("Temperature")}: {sensorData.temperature}°C</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Firmware Information Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("Firmware Information")}</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                  <div className="flex items-center gap-2">
+                    <LaptopIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    <span>{t("Version")}: {sensorData.firmwareVersion}</span>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          )}
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {/* Device Status Card */}
+            {/* Serial Monitoring Card */}
             <Card>
               <CardHeader>
-                <CardTitle>{t("Device Status")}</CardTitle>
+                <CardTitle>{t("Serial Monitoring")}</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4">
-                <div className="flex items-center gap-2">
-                  <ColoredCircle isGreen={isGreen} />
-                  <span>{status.status}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <ClockIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                  <span>{t("Last seen")}: {status.lastSeen}</span>
+                <div
+                  className="bg-gray-100 rounded-lg p-4 dark:bg-gray-800"
+                  style={{ height: "150px", overflowY: "auto" }}
+                >
+                  <pre className="font-mono text-sm text-gray-500 dark:text-gray-400">
+                    {serialMessages}
+                  </pre>
                 </div>
               </CardContent>
             </Card>
-
-            {/* System Monitoring Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("System Monitoring")}</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                <div className="flex items-center gap-2">
-                  <ThermometerIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                  <span>{t("Humidity")}: {sensorData.humidity}%</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <ThermometerIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                  <span>{t("Temperature")}: {sensorData.temperature}°C</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Firmware Information Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("Firmware Information")}</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                <div className="flex items-center gap-2">
-                  <LaptopIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                  <span>{t("Version")}: {sensorData.firmwareVersion}</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Serial Monitoring Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("Serial Monitoring")}</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <div
-                className="bg-gray-100 rounded-lg p-4 dark:bg-gray-800"
-                style={{ height: "150px", overflowY: "auto" }}
-              >
-                <pre className="font-mono text-sm text-gray-500 dark:text-gray-400">
-                  {serialMessages}
-                </pre>
-              </div>
-            </CardContent>
-          </Card>
-        </main>
-      </div>
+          </main>
+        </div>
+      )}
     </div>
   );
 }
