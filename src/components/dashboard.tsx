@@ -111,7 +111,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-center min-h-screen">
           <Spinner loading={loading} color="#ffffff" size={100} />
           </div>
-        ) : isOnline ? (
+        ) : !isOnline ? (
           <div className="flex flex-col items-center justify-center min-h-screen dark:bg-gray-900 pb-40 rounded-lg shadow-md"> 
             <h1 className="text-xl font-bold text-red-700 mb-2">{t("No Internet Connection")}</h1>
             <p className="text-white mb-4 text-center"> {/* Fixed the color class here */}
